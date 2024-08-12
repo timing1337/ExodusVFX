@@ -29,20 +29,20 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
-            filesHierachy = new TreeView();
+            filesHierarchy = new TreeView();
             toolbar = new ToolStrip();
             fileOptions = new ToolStripSplitButton();
             fileLoad = new ToolStripMenuItem();
             toolbar.SuspendLayout();
             SuspendLayout();
             // 
-            // filesHierachy
+            // filesHierarchy
             // 
-            filesHierachy.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
-            filesHierachy.Location = new Point(12, 30);
-            filesHierachy.Name = "filesHierachy";
-            filesHierachy.Size = new Size(313, 408);
-            filesHierachy.TabIndex = 0;
+            filesHierarchy.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+            filesHierarchy.Location = new Point(12, 30);
+            filesHierarchy.Name = "filesHierarchy";
+            filesHierarchy.Size = new Size(313, 408);
+            filesHierarchy.TabIndex = 0;
             // 
             // toolbar
             // 
@@ -80,11 +80,11 @@
             AutoScaleMode = AutoScaleMode.Dpi;
             ClientSize = new Size(800, 450);
             Controls.Add(toolbar);
-            Controls.Add(filesHierachy);
+            Controls.Add(filesHierarchy);
             HelpButton = true;
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Main";
-            Text = "MetroVFX";
+            Text = "ExodusVFX";
             toolbar.ResumeLayout(false);
             toolbar.PerformLayout();
             ResumeLayout(false);
@@ -93,7 +93,7 @@
 
         #endregion
 
-        private TreeView filesHierachy;
+        private TreeView filesHierarchy;
         private ToolStrip toolbar;
         private ToolStripSplitButton fileOptions;
         private ToolStripMenuItem fileLoad;

@@ -1,19 +1,19 @@
 using ExodusVFX.Database;
 using ExodusVFX.Format;
-using System.Runtime.InteropServices;
 
 namespace ExodusVFX
 {
     public partial class Main : Form
     {
+        private ImageList fileHierarchyImageList;
         public Main()
         {
             InitializeComponent();
         }
 
-        private void ReloadFileHierachy()
+        private void ReloadFileHierarchy()
         {
-            this.filesHierachy.Nodes.Clear();
+            this.filesHierarchy.Nodes.Clear();
 
             foreach(var folder in MetroDatabase.vfx.folders)
             {
@@ -22,7 +22,6 @@ namespace ExodusVFX
                 foreach (var subFolder in folder.subFolders.OrderBy(subFolder => subFolder.name))
                 {
                     var subNode = new TreeNode(subFolder.name);
-                    subNode.ImageIndex = 3;
                     this.HandleSubFolderTree(subFolder, subNode);
                     currentNode.Nodes.Add(subNode);
                 }
@@ -32,7 +31,7 @@ namespace ExodusVFX
                     currentNode.Nodes.Add(new TreeNode(file.name));
                 }
 
-                this.filesHierachy.Nodes.Add(currentNode);
+                this.filesHierarchy.Nodes.Add(currentNode);
                 
             }
         }
@@ -79,7 +78,7 @@ namespace ExodusVFX
                 MetroDatabase.loadFromFile(path);
 
                 //reload tree
-                this.ReloadFileHierachy();
+                this.ReloadFileHierarchy();
             }
         }
     }
