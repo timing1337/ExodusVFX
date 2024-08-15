@@ -34,11 +34,9 @@ namespace ExodusVFX.Vfx
             {
                 var subFolderName = filePaths.Skip(i).First();
                 var subFolderSearch = parentFolder.subFolders.Where(folder => folder.name == subFolderName);
-                if (!subFolderSearch.Any()) throw new Exception($"Can't find {path}");
                 parentFolder = subFolderSearch.First();
             }
             var fileSearch = parentFolder.files.Where(file => file.name == filePaths.Last());
-            if(!fileSearch.Any()) throw new Exception($"Can't find {path}");
 
             var file = fileSearch.First();
             var package = this.packages[file.packageIdx];

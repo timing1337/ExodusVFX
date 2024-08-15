@@ -41,7 +41,7 @@
             filesHierarchy.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             filesHierarchy.Location = new Point(12, 30);
             filesHierarchy.Name = "filesHierarchy";
-            filesHierarchy.Size = new Size(313, 408);
+            filesHierarchy.Size = new Size(466, 589);
             filesHierarchy.TabIndex = 0;
             // 
             // toolbar
@@ -51,7 +51,7 @@
             toolbar.Items.AddRange(new ToolStripItem[] { fileOptions });
             toolbar.Location = new Point(0, 0);
             toolbar.Name = "toolbar";
-            toolbar.Size = new Size(800, 27);
+            toolbar.Size = new Size(1413, 27);
             toolbar.TabIndex = 1;
             toolbar.Text = "toolbar";
             toolbar.ItemClicked += toolbar_ItemClicked;
@@ -78,7 +78,7 @@
             // 
             AutoScaleDimensions = new SizeF(120F, 120F);
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(1413, 631);
             Controls.Add(toolbar);
             Controls.Add(filesHierarchy);
             HelpButton = true;

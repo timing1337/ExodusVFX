@@ -4,29 +4,30 @@ namespace ExodusVFX.Utils
 {
     public class CompressionUtils
     {
-        [DllImport("msys-lz4-1.dll")]
+        [DllImport("liblz4.dll")]
         public static extern unsafe int LZ4_decompress_fast_withPrefix64k(byte* source, byte* destination, int originalSize);
 
+        //Actual mental illness
         public static unsafe byte[] DecompressMetroBlock(byte[] block, uint actualSize)
         {
-            var reader = new BinaryReader(new MemoryStream(block));
-            var merged = new List<byte>();
-            while (reader.BaseStream.Position < reader.BaseStream.Length)
+            var decompressedData = new byte[actualSize];
+            var decompressedDataPointerOffset = 0;
+            fixed (byte* blockP = block)
             {
-                var blockSize = reader.ReadUInt32();
-                var blockUncompressedSize = reader.ReadInt32();
-                var compressedBlock = reader.ReadBytes((int)blockSize - 8);
-                var decompressedBlock = new byte[blockUncompressedSize];
-                fixed (byte* compressedBlockP = compressedBlock)
+                fixed (byte* decompressedDataP = decompressedData)
                 {
-                    fixed (byte* decompressedBlockP = decompressedBlock)
+                    var reader = new BinaryReader(new MemoryStream(block));
+                    while (reader.BaseStream.Position < reader.BaseStream.Length)
                     {
-                        var result = LZ4_decompress_fast_withPrefix64k(compressedBlockP, decompressedBlockP, blockUncompressedSize);
+                        var blockSize = reader.ReadUInt32();
+                        var blockUncompressedSize = reader.ReadUInt32();
+                        var result = LZ4_decompress_fast_withPrefix64k(blockP + reader.BaseStream.Position, decompressedDataP + decompressedDataPointerOffset, (int)blockUncompressedSize);
+                        reader.BaseStream.Position += (int)blockSize - 8;
+                        decompressedDataPointerOffset += (int)blockUncompressedSize;
                     }
                 }
-                merged.AddRange(decompressedBlock);
             }
-            return merged.ToArray();
+            return decompressedData;
         }
     }
 }
