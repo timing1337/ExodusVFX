@@ -54,7 +54,6 @@
             toolbar.Size = new Size(1413, 27);
             toolbar.TabIndex = 1;
             toolbar.Text = "toolbar";
-            toolbar.ItemClicked += toolbar_ItemClicked;
             // 
             // fileOptions
             // 
@@ -65,7 +64,6 @@
             fileOptions.Name = "fileOptions";
             fileOptions.Size = new Size(51, 24);
             fileOptions.Text = "File";
-            fileOptions.ButtonClick += toolStripSplitButton1_ButtonClick;
             // 
             // fileLoad
             // 

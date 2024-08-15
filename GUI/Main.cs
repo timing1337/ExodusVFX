@@ -1,5 +1,6 @@
 using ExodusVFX.Database;
 using ExodusVFX.Format;
+using Serilog;
 using System.Windows.Forms;
 
 namespace ExodusVFX
@@ -18,9 +19,26 @@ namespace ExodusVFX
             
             this.fileOptionCtxMenu = new ContextMenuStrip();
             this.fileOptionCtxMenu.Items.Add(new ToolStripButton("Export as raw data"));
+            this.fileOptionCtxMenu.Click += FileOptionCtxMenu_Click;
 
             this.folderOptionCtxMenu = new ContextMenuStrip();
             this.folderOptionCtxMenu.Items.Add(new ToolStripButton("Export folder as raw data"));
+        }
+
+        private void FileOptionCtxMenu_Click(object? sender, EventArgs e)
+        {
+            var node = this.filesHierarchy.SelectedNode;
+            node.ContextMenuStrip.Close();
+            var extension = Path.GetExtension(node.Text);
+            SaveFileDialog dialog = new SaveFileDialog();
+            dialog.Title = "Save raw data";
+            dialog.Filter = $"Metro Exodus files (*.{extension})|*.{extension}";
+            dialog.FileName = node.Text;
+            dialog.ShowDialog();
+            if (dialog.FileName != node.Text)
+            {
+                File.WriteAllBytes(dialog.FileName, MetroDatabase.vfx.GetFileContent(node.FullPath.Replace("\\", "/")));
+            }
         }
 
         private void ReloadFileHierarchy()
@@ -81,20 +99,6 @@ namespace ExodusVFX
                     parentNode.Nodes.Add(treeNode);
                 }
             }
-        }
-
-        private void toolbar_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-
-        }
-
-        private void fileToolbar_Click(object sender, EventArgs e)
-        {
-
-        }
-        private void toolStripSplitButton1_ButtonClick(object sender, EventArgs e)
-        {
-
         }
 
         private void fileHierarchy_MouseClick(object? sender, TreeNodeMouseClickEventArgs e)
