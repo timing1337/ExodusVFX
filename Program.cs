@@ -9,9 +9,8 @@ namespace ExodusVFX
         static void Main()
         {
             Log.Logger = new LoggerConfiguration().WriteTo.Console(theme: AnsiConsoleTheme.Code).CreateLogger();
-
             #if DEBUG
-            Console.Init();
+            DebugConsole.Init();
             #endif
 
             ApplicationConfiguration.Initialize();

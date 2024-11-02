@@ -1,5 +1,7 @@
 using ExodusVFX.Database;
 using ExodusVFX.Format;
+using ExodusVFX.Format.Binary;
+using ExodusVFX.Format.Map;
 using Serilog;
 using System.Windows.Forms;
 
@@ -29,10 +31,8 @@ namespace ExodusVFX
         {
             var node = this.filesHierarchy.SelectedNode;
             node.ContextMenuStrip.Close();
-            var extension = Path.GetExtension(node.Text);
             SaveFileDialog dialog = new SaveFileDialog();
             dialog.Title = "Save raw data";
-            dialog.Filter = $"Metro Exodus files (*.{extension})|*.{extension}";
             dialog.FileName = node.Text;
             dialog.ShowDialog();
             if (dialog.FileName != node.Text)
@@ -87,6 +87,11 @@ namespace ExodusVFX
                 treeNode.ContextMenuStrip = this.fileOptionCtxMenu;
                 treeNode.ContextMenuStrip.PerformLayout();
                 parentNode.Nodes.Add(treeNode);
+                if(file.name == "level.bin" && file.parent.name == "01_dead_moscow")
+                {
+                    MetroArchiveReader.LoadFromFile(file);
+                    //MetroLevel.LoadFromPath(file);
+                }
             }
 
             if(folder.name == "scripts")

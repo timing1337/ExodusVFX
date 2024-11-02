@@ -13,13 +13,13 @@ namespace ExodusVFX.Format
 
             var handleObject = new T();
 
-            handleObject.name = BinaryUtils.ReadString(reader);
+            handleObject.name = reader.ReadStringZ();
             handleObject.flags = reader.ReadByte();
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                var propertyName = BinaryUtils.ReadString(reader);
-                var propertyType = BinaryUtils.ReadString(reader);
+                var propertyName = reader.ReadStringZ();
+                var propertyType = reader.ReadStringZ();
                 var value = MetroReflectionReader.ReadPropertyValue(reader, propertyType);
                 var field = typeof(T).GetField(propertyName);
                 if(field == null)
@@ -29,10 +29,6 @@ namespace ExodusVFX.Format
                 }
                 field.SetValue(handleObject, value);
             }
-            var path = "D:/materials_data/" + handleObject.name + ".json";
-            System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path));
-            File.WriteAllText(path, JsonConvert.SerializeObject(handleObject));
-
             return handleObject;
         }
 
@@ -55,7 +51,7 @@ namespace ExodusVFX.Format
                     value = reader.ReadUInt32();
                     break;
                 case "stringz":
-                    value = BinaryUtils.ReadString(reader);
+                    value = reader.ReadStringZ();
                     break;
                 case "bool":
                     value = reader.ReadBoolean();
@@ -67,15 +63,15 @@ namespace ExodusVFX.Format
                     value = ReadFloatArrayPropertyValue(reader);
                     break;
                 case "vec4f":
-                    value = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                    value = new System.Numerics.Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
                     break;
                 case "color":
                     value = MetroReflectionReader.ReadPropertyValue(reader, genericTypes[1]);
                     break;
                 case "choose": //unknown...?
                 case "choose_array": //weird lol
-                    var chooseName = BinaryUtils.ReadString(reader);
-                    var chooseType = BinaryUtils.ReadString(reader);
+                    var chooseName = reader.ReadStringZ();
+                    var chooseType = reader.ReadStringZ();
                     value = MetroReflectionReader.ReadPropertyValue(reader, chooseType);
                     break;
                 default:

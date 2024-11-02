@@ -1,9 +1,4 @@
-﻿using ExodusVFX.Utils;
-using Serilog;
-using static System.Windows.Forms.DataFormats;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
-using System.Drawing;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace ExodusVFX.Format.Material
 {

@@ -4,7 +4,7 @@ namespace ExodusVFX.Utils
 {
     public static class BinaryUtils
     {
-        public static string ReadString(this BinaryReader input)
+        public static string ReadStringZ(this BinaryReader input)
         {
             StringBuilder builder = new StringBuilder();
             while (input.BaseStream.Position < input.BaseStream.Length)
@@ -29,6 +29,17 @@ namespace ExodusVFX.Utils
             }
             input.BaseStream.Position++; //ignore random
             return builder.ToString();
+        }
+
+        public static BinaryReader chunkOpenAtCurrentPosition(BinaryReader reader, uint expectedIdx = 0)
+        {
+            uint idx = reader.ReadUInt32();
+            if (idx != expectedIdx)
+            {
+                throw new Exception($"Invalid chunk index. Got {idx}, expected {expectedIdx}");
+            }
+            uint size = reader.ReadUInt32();
+            return new BinaryReader(new MemoryStream(reader.ReadBytes((int)size)));
         }
     }
 }

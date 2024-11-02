@@ -1,4 +1,5 @@
 ﻿using ExodusVFX.Format;
+using ExodusVFX.Format.Map;
 using ExodusVFX.Format.Material;
 using ExodusVFX.Format.Script;
 using ExodusVFX.Vfx;
@@ -16,14 +17,14 @@ namespace ExodusVFX.Database
         public static List<MetroLuaScript> luaScripts = new List<MetroLuaScript>();
         public static Dictionary<string, MetroTextureHandle> textureHandles = new Dictionary<string, MetroTextureHandle>();
 
+        public static Dictionary<string, MetroLevel> levels = new Dictionary<string, MetroLevel>();
+
         public static void loadFromFile(string filePath)
         {
             MetroDatabase.luaScripts.Clear();
             MetroDatabase.textureHandles.Clear();
 
             MetroDatabase.vfx = MetroVFX.Read(filePath);
-            MetroDatabase.LoadScripts();
-            MetroDatabase.LoadTexture();
         }
 
         private static void LoadScripts()

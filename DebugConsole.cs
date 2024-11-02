@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ExodusVFX
 {
-    public class Console
+    public class DebugConsole
     {
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

@@ -26,19 +26,32 @@ namespace ExodusVFX.Vfx
             this.filePath = filePath;
         }
 
-        public byte[] GetFileContent(string path)
-        {   
-            var filePaths = path.Split('/').ToList();
-            var parentFolder = this.folders.Where(folder => folder.name == filePaths.First()).First();
-            for(int i = 1; i < filePaths.Count - 1; i++)
+        public MetroFolder GetFolder(string path)
+        {
+            var filePaths = path.Split('/');
+            var parentFolder = this.folders.Where(folder => folder.name == filePaths[0]).First();
+            for (int i = 1; i < filePaths.Length; i++)
             {
                 var subFolderName = filePaths.Skip(i).First();
                 var subFolderSearch = parentFolder.subFolders.Where(folder => folder.name == subFolderName);
                 parentFolder = subFolderSearch.First();
             }
-            var fileSearch = parentFolder.files.Where(file => file.name == filePaths.Last());
+            return parentFolder;
+        }
 
+        public byte[] GetFileContent(string path)
+        {
+            var lastIndex = path.LastIndexOf('/');
+            var fileName = path.Substring(lastIndex + 1);
+            Console.WriteLine(path.Substring(0, lastIndex));
+            var parentFolder = GetFolder(path.Substring(0, lastIndex));
+            var fileSearch = parentFolder.files.Where(file => file.name == fileName);
             var file = fileSearch.First();
+            return GetFileContent(file);
+        }
+
+        public byte[] GetFileContent(MetroFile file)
+        {
             var package = this.packages[file.packageIdx];
 
             using (BinaryReader reader = new BinaryReader(new FileStream(Path.Join(this.filePath, package.name), FileMode.Open)))
@@ -46,7 +59,7 @@ namespace ExodusVFX.Vfx
                 reader.BaseStream.Seek(file.offset, SeekOrigin.Begin);
                 var content = new byte[file.compressedSize];
                 reader.Read(content, 0, (int)file.compressedSize);
-                if(file.compressedSize != file.size) content = CompressionUtils.DecompressMetroBlock(content, file.size);
+                if (file.compressedSize != file.size) content = CompressionUtils.DecompressMetroBlock(content, file.size);
                 return content;
             }
         }
@@ -57,7 +70,7 @@ namespace ExodusVFX.Vfx
             var binaryReader = new BinaryReader(fs);
             var version = binaryReader.ReadUInt32();
             var isCompressed = Convert.ToBoolean(binaryReader.ReadUInt32());
-            var revision = BinaryUtils.ReadString(binaryReader);
+            var revision = binaryReader.ReadStringZ();
             var unk0 = binaryReader.ReadBytes(16); //according to metroex seems like its some guid shit, don't care though :D, marking it as unknown
 
             var packagesCount = binaryReader.ReadUInt32();
@@ -68,12 +81,12 @@ namespace ExodusVFX.Vfx
 
             for (uint i = 0; i < packagesCount; i++)
             {
-                var packageName = BinaryUtils.ReadString(binaryReader);
+                var packageName = binaryReader.ReadStringZ();
                 var levelsCount = binaryReader.ReadUInt32();
                 var levelNames = new string[levelsCount];
                 for(int j = 0; j < levelsCount; j++)
                 {
-                    levelNames[j] = BinaryUtils.ReadString(binaryReader);
+                    levelNames[j] = binaryReader.ReadStringZ();
                 }
                 var chunkIdx = binaryReader.ReadUInt32();
                 metroVfx.packages.Add(new MetroPackage(i, packageName, levelNames, chunkIdx));
@@ -92,7 +105,7 @@ namespace ExodusVFX.Vfx
                     var offset = binaryReader.ReadUInt32();
                     var sizeUncompressed = binaryReader.ReadUInt32();
                     var sizeCompressed = binaryReader.ReadUInt32();
-                    name = BinaryUtils.ReadEncryptedString(binaryReader);
+                    name = binaryReader.ReadEncryptedString();
                     var metroFile = new MetroFile(packageIdx, offset, sizeCompressed, sizeUncompressed, name);
                     var folder = folders.Where(folder => fileIdx >= folder.firstFileIdx && fileIdx < (folder.firstFileIdx + folder.count)).First();
                     metroFile.parent = folder;
@@ -102,7 +115,7 @@ namespace ExodusVFX.Vfx
                 {
                     var folderFilesCount = binaryReader.ReadUInt16();
                     var firstFileIdx = binaryReader.ReadUInt32();
-                    name = BinaryUtils.ReadEncryptedString(binaryReader);
+                    name = binaryReader.ReadEncryptedString();
                     if (name == "") continue; //ignore
                     var metroFolder = new MetroFolder(name, folderFilesCount, firstFileIdx);
                     var parentFolder = folders.Where(folder => fileIdx >= folder.firstFileIdx && fileIdx < (folder.firstFileIdx + folder.count));
