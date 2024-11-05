@@ -6,6 +6,9 @@ using ExodusVFX.Format.Mesh;
 using System.Text;
 using ExodusVFX.Format.Binary;
 using ExodusVFX.Format.Material;
+using Cast;
+using System;
+using Cast.NET;
 
 namespace ExodusVFX.Format.Map
 {
@@ -25,37 +28,12 @@ namespace ExodusVFX.Format.Map
             this.name = name;
         }
 
-        public void ExportToObj()
+        public void ExportToCast(string path)
         {
-            int lastIdx = 0;
-            StringBuilder vPos = new StringBuilder();
-            StringBuilder vUv = new StringBuilder();
-            StringBuilder vNorm = new StringBuilder();
-            StringBuilder f = new StringBuilder();
-            foreach(var region in this.regions.Values)
-            {
-                foreach (var mesh in region.meshes)
-                {
-                    if (mesh.vertices.Count > 0 && mesh.faces.Count > 0)
-                    {
-                        foreach (var vertex in mesh.vertices)
-                        {
-                            vPos.Append($"v {vertex.pos.X} {vertex.pos.Y} {vertex.pos.Z}\n");
-                            vUv.Append($"vt {vertex.uv0.X} {1.0f - vertex.uv0.Y}\n");
-                            vNorm.Append($"vn {vertex.normal.X} {vertex.normal.Y} {vertex.normal.Z}\n");
-                        }
-
-                        foreach (var face in mesh.faces)
-                        {
-                            f.Append($"f {face.a + 1 + lastIdx}/{face.a + 1 + lastIdx}/{face.a + 1 + lastIdx} {face.b + 1 + lastIdx}/{face.b + 1 + lastIdx}/{face.b + 1 + lastIdx} {face.c + 1 + lastIdx}/{face.c + 1 + lastIdx}/{face.c + 1 + lastIdx}\n");
-                        }
-
-                        lastIdx += mesh.vertices.Count;
-                    }
-                }
-            }
-
-            System.IO.File.WriteAllText($"{this.name}.obj", $"# {this.name}\n{vPos.ToString()}{vUv.ToString()}{vNorm.ToString()} {f.ToString()}");
+            Log.Information($"Exporting {this.name} to {path}");
+            var root = new CastNode(CastNodeIdentifier.Root);
+            foreach(var region in this.regions.Values) root.AddNode(region.ExportToCastModel());
+            CastWriter.Save(Path.Join(path, $"{this.name}.cast"), root);
         }
 
         public static MetroLevel? LoadFromPath(MetroFile file)
@@ -68,7 +46,9 @@ namespace ExodusVFX.Format.Map
             MetroFolder levelStaticFolder = folder.subFolders.Where(folder => folder.name == "static").First();
 
             level.LoadRegions(levelStaticFolder.files.Where(file => file.name == "level.lightmaps").First());
-            level.LoadEntities(file);
+            //level.LoadEntities(file);
+
+            level.ExportToCast(@"D:/");
             return level;
         }
 

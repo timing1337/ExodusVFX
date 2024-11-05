@@ -1,9 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Numerics;
 using System.Text;
-using System.Threading.Tasks;
+using Cast;
+using Cast.NET;
+using Cast.NET.Nodes;
 using ExodusVFX.Format.Mesh;
+using Serilog;
 
 namespace ExodusVFX.Format.Material
 {
@@ -16,7 +18,49 @@ namespace ExodusVFX.Format.Material
             this.name = name;
         }
 
-        public string ExportToOBJ()
+        public void ExportToCast(string path)
+        {
+            Log.Information($"Exporting {this.name} to {path}");
+            var root = new CastNode(CastNodeIdentifier.Root);
+            root.AddNode(ExportToCastModel());
+            CastWriter.Save(Path.Join(path, $"{this.name}.cast"), root);
+        }
+
+        public ModelNode ExportToCastModel()
+        {
+            var model = new ModelNode();
+            model.AddString("n", this.name);
+
+            for (var i = 0; i < this.meshes.Count; i++) {
+                MeshNode mesh = new MeshNode();
+                MetroMesh metroMesh = this.meshes[i];
+
+                // Faces
+                var faceIndices = mesh.AddArray<uint>("f", new(metroMesh.faces.Count * 3));
+                var positions = mesh.AddArray<Vector3>("vp", new(metroMesh.vertices.Count));
+                var normals = mesh.AddArray<Vector3>("vn", new(metroMesh.vertices.Count));
+                var uv0 = mesh.AddArray<Vector2>("u0", new(metroMesh.vertices.Count));
+
+                foreach(var vertice in metroMesh.vertices)
+                {
+                    positions.Add(vertice.pos);
+                    normals.Add(new Vector3(vertice.normal.X, vertice.normal.Y, vertice.normal.Z));
+                    uv0.Add(vertice.uv0);
+                }
+
+                foreach (var metroFace in metroMesh.faces)
+                {
+                    faceIndices.Add((uint)(metroFace.a));
+                    faceIndices.Add((uint)(metroFace.b));
+                    faceIndices.Add((uint)(metroFace.c));
+                }
+
+                model.AddNode(mesh);
+            }
+            return model;
+        }
+
+        public void ExportToOBJ(string path)
         {
             int lastIdx = 0;
             StringBuilder vPos = new StringBuilder();
@@ -42,8 +86,7 @@ namespace ExodusVFX.Format.Material
                     lastIdx += mesh.vertices.Count;
                 }
             }
-            string obj = $"# {this.name}\n{vPos.ToString()}{vUv.ToString()}{vNorm.ToString()} {f.ToString()}";
-            return obj;
+            File.WriteAllText(Path.Join(path, $"{this.name}.obj"), $"# {this.name}\n{vPos.ToString()}{vUv.ToString()}{vNorm.ToString()} {f.ToString()}");
         }
     }
 }
