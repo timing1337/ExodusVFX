@@ -1,3 +1,4 @@
+using ExodusVFX.Utils;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 
@@ -8,10 +9,10 @@ namespace ExodusVFX
         [STAThread]
         static void Main()
         {
-            Log.Logger = new LoggerConfiguration().WriteTo.Console(theme: AnsiConsoleTheme.Code).CreateLogger();
             #if DEBUG
             DebugConsole.Init();
             #endif
+            Log.Logger = new LoggerConfiguration().WriteTo.Console(theme: AnsiConsoleTheme.Grayscale).CreateLogger();
 
             ApplicationConfiguration.Initialize();
             Application.Run(new Main());

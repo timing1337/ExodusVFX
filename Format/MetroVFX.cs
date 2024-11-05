@@ -43,7 +43,6 @@ namespace ExodusVFX.Vfx
         {
             var lastIndex = path.LastIndexOf('/');
             var fileName = path.Substring(lastIndex + 1);
-            Console.WriteLine(path.Substring(0, lastIndex));
             var parentFolder = GetFolder(path.Substring(0, lastIndex));
             var fileSearch = parentFolder.files.Where(file => file.name == fileName);
             var file = fileSearch.First();

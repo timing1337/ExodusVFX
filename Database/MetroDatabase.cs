@@ -25,6 +25,8 @@ namespace ExodusVFX.Database
             MetroDatabase.textureHandles.Clear();
 
             MetroDatabase.vfx = MetroVFX.Read(filePath);
+            LoadScripts();
+            LoadTexture();
         }
 
         private static void LoadScripts()

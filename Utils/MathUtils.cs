@@ -4,8 +4,8 @@ namespace ExodusVFX.Utils
 {
     public class MathUtils
     {
-        private const double div = 1.0f / 127.0f;
-        private const double div255 = 1.0f / 255.0f;
+        private const float div = 1.0f / 127.0f;
+        private const float div255 = 1.0f / 255.0f;
 
         public static Vector3 InverseVector(Vector3 v)
         {
@@ -18,10 +18,10 @@ namespace ExodusVFX.Utils
 
         public static Vector4 DecodeNormal(uint n)
         {
-            double x = ((n & 0x00FF0000) >> 16) * div - 1.0f;
-            double y = ((n & 0x0000FF00) >> 8) * div - 1.0f;
-            double z = ((n & 0x000000FF) >> 0) * div - 1.0f;
-            double w = ((n & 0xFF000000) >> 24) * div255;
+            float x = ((n & 0x00FF0000) >> 16) * div - 1.0f;
+            float y = ((n & 0x0000FF00) >> 8) * div - 1.0f;
+            float z = ((n & 0x000000FF) >> 0) * div - 1.0f;
+            float w = ((n & 0xFF000000) >> 24) * div255;
             return new Vector4(x, y, z, w);
         }
 

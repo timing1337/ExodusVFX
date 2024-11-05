@@ -63,7 +63,7 @@ namespace ExodusVFX.Format
                     value = ReadFloatArrayPropertyValue(reader);
                     break;
                 case "vec4f":
-                    value = new System.Numerics.Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+                    value = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
                     break;
                 case "color":
                     value = MetroReflectionReader.ReadPropertyValue(reader, genericTypes[1]);

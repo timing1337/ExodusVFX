@@ -4,6 +4,8 @@ using Serilog;
 using System.Numerics;
 using ExodusVFX.Format.Mesh;
 using System.Text;
+using ExodusVFX.Format.Binary;
+using ExodusVFX.Format.Material;
 
 namespace ExodusVFX.Format.Map
 {
@@ -13,47 +15,47 @@ namespace ExodusVFX.Format.Map
         public Dictionary<string, MetroLevelRegion> regions = new Dictionary<string, MetroLevelRegion>();
 
         public static readonly uint STARTUP_ARCHIVE = CRC32.Calculate("startup");
-        public static readonly uint ENTITIES_ARCHIVE = CRC32.Calculate("entities_params");
+        public static readonly uint ENTITIES_PARAMS_ARCHIVE = CRC32.Calculate("entities_params");
+        public static readonly uint ENTITIES_ARCHIVE = CRC32.Calculate("entities");
+
+        public MetroEntity[] entities;
 
         public MetroLevel(string name, string path)
         {
             this.name = name;
         }
 
-        public void ExportToOBJ(string regionName)
+        public void ExportToObj()
         {
-            MetroLevelRegion region = regions[regionName];
-            if(region == null)
-            {
-                Log.Error($"Region {region} not found");
-                return;
-            }
             int lastIdx = 0;
             StringBuilder vPos = new StringBuilder();
             StringBuilder vUv = new StringBuilder();
             StringBuilder vNorm = new StringBuilder();
             StringBuilder f = new StringBuilder();
-            foreach (var mesh in region.meshes)
+            foreach(var region in this.regions.Values)
             {
-                if (mesh.vertices.Count > 0 && mesh.faces.Count > 0)
+                foreach (var mesh in region.meshes)
                 {
-                    foreach (var vertex in mesh.vertices)
+                    if (mesh.vertices.Count > 0 && mesh.faces.Count > 0)
                     {
-                        vPos.Append($"v {vertex.pos.X} {vertex.pos.Y} {vertex.pos.Z}\n");
-                        vUv.Append($"vt {vertex.uv0.X} {1.0f - vertex.uv0.Y}\n");
-                        vNorm.Append($"vn {vertex.normal.X} {vertex.normal.Y} {vertex.normal.Z}\n");
-                    }
+                        foreach (var vertex in mesh.vertices)
+                        {
+                            vPos.Append($"v {vertex.pos.X} {vertex.pos.Y} {vertex.pos.Z}\n");
+                            vUv.Append($"vt {vertex.uv0.X} {1.0f - vertex.uv0.Y}\n");
+                            vNorm.Append($"vn {vertex.normal.X} {vertex.normal.Y} {vertex.normal.Z}\n");
+                        }
 
-                    foreach (var face in mesh.faces)
-                    {
-                        f.Append($"f {face.a + 1 + lastIdx}/{face.a + 1 + lastIdx}/{face.a + 1 + lastIdx} {face.b + 1 + lastIdx}/{face.b + 1 + lastIdx}/{face.b + 1 + lastIdx} {face.c + 1 + lastIdx}/{face.c + 1 + lastIdx}/{face.c + 1 + lastIdx}\n");
-                    }
+                        foreach (var face in mesh.faces)
+                        {
+                            f.Append($"f {face.a + 1 + lastIdx}/{face.a + 1 + lastIdx}/{face.a + 1 + lastIdx} {face.b + 1 + lastIdx}/{face.b + 1 + lastIdx}/{face.b + 1 + lastIdx} {face.c + 1 + lastIdx}/{face.c + 1 + lastIdx}/{face.c + 1 + lastIdx}\n");
+                        }
 
-                    lastIdx += mesh.vertices.Count;
+                        lastIdx += mesh.vertices.Count;
+                    }
                 }
             }
-            string obj = $"# {regionName}\n{vPos.ToString()}{vUv.ToString()}{vNorm.ToString()} {f.ToString()}";
-            System.IO.File.WriteAllText($"{regionName}.obj", obj);
+
+            System.IO.File.WriteAllText($"{this.name}.obj", $"# {this.name}\n{vPos.ToString()}{vUv.ToString()}{vNorm.ToString()} {f.ToString()}");
         }
 
         public static MetroLevel? LoadFromPath(MetroFile file)
@@ -65,33 +67,56 @@ namespace ExodusVFX.Format.Map
 
             MetroFolder levelStaticFolder = folder.subFolders.Where(folder => folder.name == "static").First();
 
-            MetroFile levelLightmaps = levelStaticFolder.files.Where(file => file.name == "level.lightmaps").First();
-            BinaryReader lightmapsReader = new BinaryReader(new MemoryStream(MetroDatabase.vfx.GetFileContent(levelLightmaps)));
+            level.LoadRegions(levelStaticFolder.files.Where(file => file.name == "level.lightmaps").First());
+            level.LoadEntities(file);
+            return level;
+        }
+
+        private void LoadEntities(MetroFile file)
+        {
+            MetroArchiveReader archive = MetroArchiveReader.LoadFromFile(file);
+            MetroArchive entitiesArchive = archive.GetArchive(ENTITIES_ARCHIVE);
+            MetroArchive paramsArchive = archive.GetArchive(ENTITIES_PARAMS_ARCHIVE);
+
+            ushort version = paramsArchive.reader.ReadUInt16();
+
+            Log.Information($"Loading entities from {file.GetFullPath()} / version: {version}");
+
+            MetroArchive[] entitiesRawData = entitiesArchive.ReadArray();
+
+            this.entities = new MetroEntity[entitiesRawData.Length];
+            foreach (var entityData in entitiesRawData){
+                MetroEntity entity = MetroEntity.LoadFromArchiveChunk(entityData, version);
+                //we only cares about static props, thats all
+                if (entity.visual != "" && entity.name != "") this.entities.Append(entity);
+            }
+        }
+
+        private void LoadRegions(MetroFile file)
+        {
+            BinaryReader lightmapsReader = new BinaryReader(new MemoryStream(MetroDatabase.vfx.GetFileContent(file)));
 
             uint version = lightmapsReader.ReadUInt32();
             uint numRegion = lightmapsReader.ReadUInt32();
 
-            Log.Information($"Loading level {level.name} with {numRegion} regions");
+            Log.Information($"Loading level {this.name} with {numRegion} regions");
 
             for (var i = 0; i < numRegion; i++)
             {
                 string regionName = lightmapsReader.ReadStringZ();
                 MetroLevelRegion region = new MetroLevelRegion(regionName);
 
-                MetroFile descriptionFile = levelStaticFolder.files.Where(file => file.name == regionName).First();
+                MetroFile descriptionFile = file.parent.files.Where(file => file.name == regionName).First();
                 BinaryReader descriptionReader = new BinaryReader(new MemoryStream(MetroDatabase.vfx.GetFileContent(descriptionFile)));
 
-                MetroFile geometryFile = levelStaticFolder.files.Where(file => file.name == $"{regionName}.geom_pc").First();
+                MetroFile geometryFile = file.parent.files.Where(file => file.name == $"{regionName}.geom_pc").First();
                 BinaryReader geometryReader = new BinaryReader(new MemoryStream(MetroDatabase.vfx.GetFileContent(geometryFile)));
 
                 ReadGeometryDescription(descriptionReader, region);
                 ReadGeometryData(geometryReader, region);
-                
-                level.regions.Add(regionName, region);
-                level.ExportToOBJ(regionName);
-            }
 
-            return level;
+                this.regions.Add(regionName, region);
+            }
         }
 
         private static void ReadGeometryData(BinaryReader reader, MetroLevelRegion region)
@@ -156,7 +181,6 @@ namespace ExodusVFX.Format.Map
                         }
                         break;
                     default:
-                        Log.Warning($"ReadGeometryData // Unknown chunk type {chunkType}");
                         break;
                 }
             }
@@ -202,7 +226,6 @@ namespace ExodusVFX.Format.Map
 
                     mesh.material = headerData.ReadStringZ();
                     mesh.geometrySettings = headerData.ReadStringZ();
-                    Console.WriteLine($"Material data: {mesh.material}, Geometry data: {mesh.geometrySettings}");
 
                     //AABB and stuff like that :fire:, i think idk, 64 bytes
                     BinaryReader sideInformationChunk = BinaryUtils.chunkOpenAtCurrentPosition(chunkReader, 1);

@@ -87,10 +87,9 @@ namespace ExodusVFX
                 treeNode.ContextMenuStrip = this.fileOptionCtxMenu;
                 treeNode.ContextMenuStrip.PerformLayout();
                 parentNode.Nodes.Add(treeNode);
-                if(file.name == "level.bin" && file.parent.name == "01_dead_moscow")
+                if(file.name == "level.bin" && file.parent.name == "dlc_1_deadcity")
                 {
-                    MetroArchiveReader.LoadFromFile(file);
-                    //MetroLevel.LoadFromPath(file);
+                    MetroLevel.LoadFromPath(file);
                 }
             }
 

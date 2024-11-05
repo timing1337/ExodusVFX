@@ -6,28 +6,34 @@ namespace ExodusVFX.Format.Binary
 {
     public class MetroArchiveReader
     {
+        public int flags;
+
         public string path;
 
         public string[]? stringTables;
 
         public Dictionary<uint, MetroArchive> archives = new Dictionary<uint, MetroArchive>();
 
-        public MetroArchiveReader(string path, BinaryReader mainChunk)
+        public MetroArchiveReader(string path, BinaryReader mainChunk, int flags)
         {
             this.path = path;
             //Preload chunks :D
 
             Log.Information($"Loading bin archives from {path}");
 
-            while (mainChunk.BaseStream.Position < mainChunk.BaseStream.Length)
+            if(!MetroFlags.HasFlag(flags, MetroFlags.NoSections))
             {
-                uint idx = mainChunk.ReadUInt32();
-                uint size = mainChunk.ReadUInt32() - 1;
-                byte flags = mainChunk.ReadByte();
-                byte[] content = mainChunk.ReadBytes((int)size);
-                archives.Add(idx, new MetroArchive(flags, content));
-                Log.Information($"Loaded archive {idx} with flags {flags}");
+                while (mainChunk.BaseStream.Position < mainChunk.BaseStream.Length)
+                {
+                    uint idx = mainChunk.ReadUInt32();
+                    uint size = mainChunk.ReadUInt32();
+                    byte[] content = mainChunk.ReadBytes((int)size);
+                    archives.Add(idx, new MetroArchive(this, content));
+                    Log.Information($"Loaded archive {idx} with flags");
+                }
             }
+
+            this.flags = flags;
         }
 
         public void PopulateStringTables(int count)
@@ -47,10 +53,10 @@ namespace ExodusVFX.Format.Binary
         public static MetroArchiveReader LoadFromFile(MetroFile file)
         {
             BinaryReader reader = new BinaryReader(new MemoryStream(MetroDatabase.vfx.GetFileContent(file)));
-            reader.ReadBytes(4);
+            reader.ReadBytes(4); // Header
             var bitFlags = reader.ReadByte();
-            reader.ReadBytes(8);
-            MetroArchiveReader bin = new MetroArchiveReader(file.GetFullPath(), BinaryUtils.chunkOpenAtCurrentPosition(reader, CRC32.Calculate("arch_chunk_0")));
+            reader.ReadBytes(8); // I have no idea lol
+            MetroArchiveReader bin = new MetroArchiveReader(file.GetFullPath(), BinaryUtils.chunkOpenAtCurrentPosition(reader, CRC32.Calculate("arch_chunk_0")), bitFlags);
             
             if(MetroFlags.HasFlag(bitFlags, MetroFlags.StringsTable))
             {

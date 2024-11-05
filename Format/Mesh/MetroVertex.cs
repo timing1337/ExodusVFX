@@ -1,5 +1,4 @@
-﻿using ExodusVFX.Utils;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace ExodusVFX.Format.Mesh
 {
@@ -7,7 +6,7 @@ namespace ExodusVFX.Format.Mesh
     {
         public Vector3 pos;
         public byte[] bones; // 4
-        public Utils.Vector4 normal;
+        public Vector4 normal;
         public byte[] weights; // 4 
         public Vector2 uv0;
         public Vector2 uv1;
