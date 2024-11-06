@@ -11,20 +11,17 @@ namespace ExodusVFX
     public partial class Main : Form
     {
         private ImageList fileHierarchyImageList;
-        private ContextMenuStrip fileOptionCtxMenu;
-        private ContextMenuStrip folderOptionCtxMenu;
-        private ContextMenuStrip modelOptionCtxMenu;
-        private ContextMenuStrip mapOptionCtxMenu;
-        private ContextMenuStrip regionOptionCtxMenu;
+        private static ContextMenuStrip fileOptionCtxMenu = new ContextMenuStrip();
+        private static ContextMenuStrip folderOptionCtxMenu = new ContextMenuStrip();
+        private static ContextMenuStrip modelOptionCtxMenu = new ContextMenuStrip();
+        private static ContextMenuStrip mapOptionCtxMenu = new ContextMenuStrip();
+        private static ContextMenuStrip regionOptionCtxMenu = new ContextMenuStrip();
 
         public Main()
         {
             InitializeComponent();
 
             this.filesHierarchy.NodeMouseClick += fileHierarchy_MouseClick;
-
-            ToolStripButton exportAsRaw = new ToolStripButton("Export as raw data");
-            exportAsRaw.Click += FileOptionCtxMenu_Click;
 
             ToolStripButton exportFolderAsRaw = new ToolStripButton("Export folder as raw data");
             exportFolderAsRaw.Click += FileOptionCtxMenu_Click;
@@ -38,23 +35,30 @@ namespace ExodusVFX
             ToolStripButton exportRegion = new ToolStripButton("Export region");
             exportRegion.Click += ExportRegionCtxMenu_Click;
 
-            this.fileOptionCtxMenu = new ContextMenuStrip();
-            this.fileOptionCtxMenu.Items.Add(exportAsRaw);
+            fileOptionCtxMenu = new ContextMenuStrip();
+            AddDefaultMember(fileOptionCtxMenu);
 
-            this.folderOptionCtxMenu = new ContextMenuStrip();
-            this.folderOptionCtxMenu.Items.Add(exportFolderAsRaw);
+            folderOptionCtxMenu = new ContextMenuStrip();
+            folderOptionCtxMenu.Items.Add(exportFolderAsRaw);
 
-            this.modelOptionCtxMenu = new ContextMenuStrip();
-            this.modelOptionCtxMenu.Items.Add(exportAsModel);
-            this.modelOptionCtxMenu.Items.Add(exportAsRaw);
+            modelOptionCtxMenu = new ContextMenuStrip();
+            modelOptionCtxMenu.Items.Add(exportAsModel);
+            AddDefaultMember(modelOptionCtxMenu);
 
-            this.mapOptionCtxMenu = new ContextMenuStrip();
-            this.mapOptionCtxMenu.Items.Add(exportMap);
-            this.mapOptionCtxMenu.Items.Add(exportAsRaw);
+            mapOptionCtxMenu = new ContextMenuStrip();
+            mapOptionCtxMenu.Items.Add(exportMap);
+            AddDefaultMember(mapOptionCtxMenu);
 
-            this.regionOptionCtxMenu = new ContextMenuStrip();
-            this.regionOptionCtxMenu.Items.Add(exportRegion);
-            this.regionOptionCtxMenu.Items.Add(exportAsRaw);
+            regionOptionCtxMenu = new ContextMenuStrip();
+            regionOptionCtxMenu.Items.Add(exportRegion);
+            AddDefaultMember(regionOptionCtxMenu);
+        }
+
+        private void AddDefaultMember(ContextMenuStrip strip)
+        {
+            ToolStripButton exportAsRaw = new ToolStripButton("Export as raw data");
+            exportAsRaw.Click += FileOptionCtxMenu_Click;
+            strip.Items.Add(exportAsRaw);
         }
         private void ExportRegionCtxMenu_Click(object? sender, EventArgs e)
         {
@@ -128,7 +132,7 @@ namespace ExodusVFX
                 {
                     var subNode = new TreeNode(subFolder.name);
                     this.HandleSubFolderTree(subFolder, subNode);
-                    subNode.ContextMenuStrip = this.folderOptionCtxMenu;
+                    subNode.ContextMenuStrip = folderOptionCtxMenu;
                     subNode.ContextMenuStrip.PerformLayout();
                     currentNode.Nodes.Add(subNode);
                 }
@@ -136,7 +140,7 @@ namespace ExodusVFX
                 foreach (var file in folder.files.OrderBy(file => file.name))
                 {
                     var treeNode = new TreeNode(file.name);
-                    treeNode.ContextMenuStrip = this.fileOptionCtxMenu;
+                    treeNode.ContextMenuStrip = fileOptionCtxMenu;
                     treeNode.ContextMenuStrip.PerformLayout();
                     currentNode.Nodes.Add(treeNode);
                 }
@@ -151,7 +155,7 @@ namespace ExodusVFX
             {
                 var subNode = new TreeNode(subFolder.name);
                 this.HandleSubFolderTree(subFolder, subNode);
-                subNode.ContextMenuStrip = this.folderOptionCtxMenu;
+                subNode.ContextMenuStrip = folderOptionCtxMenu;
                 subNode.ContextMenuStrip.PerformLayout();
                 parentNode.Nodes.Add(subNode);
             }
@@ -159,11 +163,11 @@ namespace ExodusVFX
             foreach (var file in folder.files.OrderBy(file => file.name))
             {
                 var treeNode = new TreeNode(file.name);
-                treeNode.ContextMenuStrip = this.fileOptionCtxMenu;
-                if (file.name.EndsWith(".model")) treeNode.ContextMenuStrip = this.modelOptionCtxMenu;
+                treeNode.ContextMenuStrip = fileOptionCtxMenu;
+                if (file.name.EndsWith(".model")) treeNode.ContextMenuStrip = modelOptionCtxMenu;
                 if (file.name == "level.bin")
                 {
-                    treeNode.ContextMenuStrip = this.mapOptionCtxMenu;
+                    treeNode.ContextMenuStrip = mapOptionCtxMenu;
                     MetroLevel level = MetroLevel.LoadFromFile(file);
                     MetroDatabase.levels.Add(level.name, level);
 
@@ -184,7 +188,7 @@ namespace ExodusVFX
                 foreach(var luaScript in MetroDatabase.luaScripts)
                 {
                     var treeNode = new TreeNode($"script_crc32_{luaScript.crc32.ToString("X")}.bin");
-                    treeNode.ContextMenuStrip = this.fileOptionCtxMenu;
+                    treeNode.ContextMenuStrip = fileOptionCtxMenu;
                     treeNode.ContextMenuStrip.PerformLayout();
                     parentNode.Nodes.Add(treeNode);
                 }

@@ -5,7 +5,6 @@ using ExodusVFX.Format.Model;
 using ExodusVFX.Format.Script;
 using ExodusVFX.Vfx;
 using Serilog;
-using System.Runtime.Intrinsics.Arm;
 
 namespace ExodusVFX.Database
 {
