@@ -2,6 +2,7 @@ using ExodusVFX.Database;
 using ExodusVFX.Format;
 using ExodusVFX.Format.Binary;
 using ExodusVFX.Format.Map;
+using ExodusVFX.Format.Model;
 using Serilog;
 using System.Windows.Forms;
 
@@ -12,19 +13,93 @@ namespace ExodusVFX
         private ImageList fileHierarchyImageList;
         private ContextMenuStrip fileOptionCtxMenu;
         private ContextMenuStrip folderOptionCtxMenu;
+        private ContextMenuStrip modelOptionCtxMenu;
+        private ContextMenuStrip mapOptionCtxMenu;
+        private ContextMenuStrip regionOptionCtxMenu;
 
         public Main()
         {
             InitializeComponent();
 
             this.filesHierarchy.NodeMouseClick += fileHierarchy_MouseClick;
-            
+
+            ToolStripButton exportAsRaw = new ToolStripButton("Export as raw data");
+            exportAsRaw.Click += FileOptionCtxMenu_Click;
+
+            ToolStripButton exportFolderAsRaw = new ToolStripButton("Export folder as raw data");
+            exportFolderAsRaw.Click += FileOptionCtxMenu_Click;
+
+            ToolStripButton exportAsModel = new ToolStripButton("Export model");
+            exportAsModel.Click += ExportModelCtxMenu_Click;
+
+            ToolStripButton exportMap = new ToolStripButton("Export map");
+            exportMap.Click += ExportMapCtxMenu_Click;
+
+            ToolStripButton exportRegion = new ToolStripButton("Export region");
+            exportRegion.Click += ExportRegionCtxMenu_Click;
+
             this.fileOptionCtxMenu = new ContextMenuStrip();
-            this.fileOptionCtxMenu.Items.Add(new ToolStripButton("Export as raw data"));
-            this.fileOptionCtxMenu.Click += FileOptionCtxMenu_Click;
+            this.fileOptionCtxMenu.Items.Add(exportAsRaw);
 
             this.folderOptionCtxMenu = new ContextMenuStrip();
-            this.folderOptionCtxMenu.Items.Add(new ToolStripButton("Export folder as raw data"));
+            this.folderOptionCtxMenu.Items.Add(exportFolderAsRaw);
+
+            this.modelOptionCtxMenu = new ContextMenuStrip();
+            this.modelOptionCtxMenu.Items.Add(exportAsModel);
+            this.modelOptionCtxMenu.Items.Add(exportAsRaw);
+
+            this.mapOptionCtxMenu = new ContextMenuStrip();
+            this.mapOptionCtxMenu.Items.Add(exportMap);
+            this.mapOptionCtxMenu.Items.Add(exportAsRaw);
+
+            this.regionOptionCtxMenu = new ContextMenuStrip();
+            this.regionOptionCtxMenu.Items.Add(exportRegion);
+            this.regionOptionCtxMenu.Items.Add(exportAsRaw);
+        }
+        private void ExportRegionCtxMenu_Click(object? sender, EventArgs e)
+        {
+            TreeNode node = this.filesHierarchy.SelectedNode;
+            node.ContextMenuStrip.Close();
+
+            Console.WriteLine(node.Parent.Parent.Name);
+
+            MetroLevel level = MetroDatabase.levels[node.Parent.Parent.Text];
+            MetroSector region = level.regions[node.Text];
+
+            SaveFileDialog dialog = new SaveFileDialog();
+            dialog.Title = "Save region";
+            dialog.FileName = region.name + ".cast";
+            dialog.ShowDialog();
+            if (dialog.FileName != node.Text) region.ExportToCast(dialog.FileName);
+        }
+
+        private void ExportMapCtxMenu_Click(object? sender, EventArgs e)
+        {
+            TreeNode node = this.filesHierarchy.SelectedNode;
+            node.ContextMenuStrip.Close();
+
+            MetroFile file = MetroDatabase.vfx.GetFileFromPath(node.FullPath.Replace("\\", "/"));
+            MetroLevel level = MetroLevel.LoadFromFile(file);
+
+            SaveFileDialog dialog = new SaveFileDialog();
+            dialog.Title = "Save map";
+            dialog.FileName = level.name + ".cast";
+            dialog.ShowDialog();
+            if (dialog.FileName != node.Text) level.ExportToCast(dialog.FileName);
+        }
+
+        private void ExportModelCtxMenu_Click(object? sender, EventArgs e)
+        {
+            TreeNode node = this.filesHierarchy.SelectedNode;
+            node.ContextMenuStrip.Close();
+
+            SaveFileDialog dialog = new SaveFileDialog();
+            MetroFile file = MetroDatabase.vfx.GetFileFromPath(node.FullPath.Replace("\\", "/"));
+            MetroModel model = MetroModel.LoadFromFile(file);
+            dialog.Title = "Save model";
+            dialog.FileName = model.name + ".cast";
+            dialog.ShowDialog();
+            if (dialog.FileName != node.Text) model.ExportToCast(dialog.FileName);
         }
 
         private void FileOptionCtxMenu_Click(object? sender, EventArgs e)
@@ -85,12 +160,23 @@ namespace ExodusVFX
             {
                 var treeNode = new TreeNode(file.name);
                 treeNode.ContextMenuStrip = this.fileOptionCtxMenu;
+                if (file.name.EndsWith(".model")) treeNode.ContextMenuStrip = this.modelOptionCtxMenu;
+                if (file.name == "level.bin")
+                {
+                    treeNode.ContextMenuStrip = this.mapOptionCtxMenu;
+                    MetroLevel level = MetroLevel.LoadFromFile(file);
+                    MetroDatabase.levels.Add(level.name, level);
+
+                    foreach (var region in level.regions)
+                    {
+                        var subRegionNode = new TreeNode(region.Key);
+                        subRegionNode.ContextMenuStrip = regionOptionCtxMenu;
+                        subRegionNode.ContextMenuStrip.PerformLayout();
+                        treeNode.Nodes.Add(subRegionNode);
+                    }
+                }
                 treeNode.ContextMenuStrip.PerformLayout();
                 parentNode.Nodes.Add(treeNode);
-                if(file.name == "level.bin" && file.parent.name == "dlc_1_deadcity")
-                {
-                    MetroLevel.LoadFromPath(file);
-                }
             }
 
             if(folder.name == "scripts")
@@ -120,6 +206,7 @@ namespace ExodusVFX
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 var path = openFileDialog1.FileName;
+                MetroDatabase.vfx = null;
                 MetroDatabase.loadFromFile(path);
 
                 //reload tree

@@ -24,8 +24,8 @@
         public string GetFullPath()
         {
             if(this.fullPath != null) return this.fullPath;
-            var parentFolder = this.parent;
-            var paths = new List<string>();
+            MetroFolder parentFolder = this.parent;
+            List<string> paths = new List<string>();
             paths.Add(this.name);
             while (parentFolder != null && parentFolder.name != "")
             {

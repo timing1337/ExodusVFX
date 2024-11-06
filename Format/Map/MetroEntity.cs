@@ -1,4 +1,7 @@
-﻿using ExodusVFX.Format.Binary;
+﻿using Cast.NET.Nodes;
+using ExodusVFX.Database;
+using ExodusVFX.Format.Binary;
+using ExodusVFX.Format.Model;
 using ExodusVFX.Utils;
 using Serilog;
 using System.Numerics;
@@ -20,7 +23,9 @@ namespace ExodusVFX.Format.Map
         public byte? oflags;
         public byte? sflags;
         public float? culling_distance;
-        public Matrix unk;
+        public Vector3 position;
+        public Quaternion rotation;
+        public Vector3 scale;
         public string visual = "";
         public ushort? dao_val;
         public Vector4? render_aux_val;
@@ -68,7 +73,22 @@ namespace ExodusVFX.Format.Map
 
             return entity;
         }
-        
+
+        public ModelNode ExportToCastModel()
+        {
+            string meshName = this.visual.Split("@")[0];
+
+            MetroModel model = MetroDatabase.models.GetValueOrDefault(meshName);
+
+            if (model == null)
+            {
+                Console.WriteLine($"content/meshes/{meshName}.model");
+                model = MetroModel.LoadFromFile(MetroDatabase.vfx.GetFileFromPath($"content/meshes/{meshName}.model".Replace("\\", "/")));
+                MetroDatabase.models[meshName] = model;
+            }
+            return model.ExportToCastModel(this.name, this.position, this.rotation, this.scale);
+        }
+
         private static void LoadSubData(MetroArchive archive, MetroEntity entity)
         {
             BinaryReader reader = archive.reader;
@@ -77,23 +97,20 @@ namespace ExodusVFX.Format.Map
             entity.oflags = reader.ReadByte();
             entity.sflags = reader.ReadByte();
             entity.culling_distance = reader.ReadSingle();
-            entity.unk = Matrix.ReadFromBinary(reader);
+            Matrix matrix = Matrix.ReadFromBinary(reader);
+
+            Vector3 translation, scale;
+            Quaternion rotation;
+
+            matrix.Decompose(out scale, out rotation, out translation);
+
+            entity.rotation = rotation;
+            entity.position = translation;
+            entity.scale = scale;
+
             entity.visual = archive.ReadString();
             entity.dao_val = reader.ReadUInt16();
             entity.render_aux_val = new Vector4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-
-            reader.ReadUInt32();
-            entity.unk2 = (new MetroArchive(archive.mainArchive, reader.ReadBytes((int)(reader.ReadUInt32())))).ReadArray();
-
-            entity.vs_active = reader.ReadBoolean();
-            entity.spatial_sector = reader.ReadUInt16();
-            entity.qsave_chunk = reader.ReadByte();
-
-            reader.ReadUInt32();
-            entity.commons_vs = (new MetroArchive(archive.mainArchive, reader.ReadBytes((int)(reader.ReadUInt32())))).ReadArray();
-
-            reader.ReadUInt32();
-            entity.removed_vs = (new MetroArchive(archive.mainArchive, reader.ReadBytes((int)(reader.ReadUInt32())))).ReadArray();
         }
     }
 }

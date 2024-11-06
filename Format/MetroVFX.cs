@@ -28,25 +28,29 @@ namespace ExodusVFX.Vfx
 
         public MetroFolder GetFolder(string path)
         {
-            var filePaths = path.Split('/');
+            string[] filePaths = path.Split('/');
             var parentFolder = this.folders.Where(folder => folder.name == filePaths[0]).First();
             for (int i = 1; i < filePaths.Length; i++)
             {
-                var subFolderName = filePaths.Skip(i).First();
+                string subFolderName = filePaths.Skip(i).First();
                 var subFolderSearch = parentFolder.subFolders.Where(folder => folder.name == subFolderName);
                 parentFolder = subFolderSearch.First();
             }
             return parentFolder;
         }
 
-        public byte[] GetFileContent(string path)
+        public MetroFile GetFileFromPath(string path)
         {
             var lastIndex = path.LastIndexOf('/');
             var fileName = path.Substring(lastIndex + 1);
             var parentFolder = GetFolder(path.Substring(0, lastIndex));
             var fileSearch = parentFolder.files.Where(file => file.name == fileName);
-            var file = fileSearch.First();
-            return GetFileContent(file);
+            return fileSearch.First();
+        }
+
+        public byte[] GetFileContent(string path)
+        {
+            return GetFileContent(GetFileFromPath(path));
         }
 
         public byte[] GetFileContent(MetroFile file)

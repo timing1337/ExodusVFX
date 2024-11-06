@@ -30,5 +30,10 @@ namespace ExodusVFX.Utils
             Vector3 d = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
             return new Matrix(a, b, c, d);
         }
+        public void Decompose(out Vector3 scale, out Quaternion rotation, out Vector3 translation)
+        {
+            Matrix4x4 res = new Matrix4x4(this.a.X, a.Y, a.Z, 0, a.X, b.Y, b.Z, 0, c.X, c.Y, c.Z, 0, d.X, d.Y, d.Z, 0);
+            Matrix4x4.Decompose(res, out scale, out rotation, out translation);
+        }
     }
 }

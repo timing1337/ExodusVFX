@@ -36,6 +36,7 @@ namespace ExodusVFX.Utils
             uint idx = reader.ReadUInt32();
             if (idx != expectedIdx)
             {
+                reader.BaseStream.Position -= 4;
                 throw new Exception($"Invalid chunk index. Got {idx}, expected {expectedIdx}");
             }
             uint size = reader.ReadUInt32();

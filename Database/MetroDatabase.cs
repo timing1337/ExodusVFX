@@ -1,6 +1,7 @@
 ﻿using ExodusVFX.Format;
 using ExodusVFX.Format.Map;
 using ExodusVFX.Format.Material;
+using ExodusVFX.Format.Model;
 using ExodusVFX.Format.Script;
 using ExodusVFX.Vfx;
 using Serilog;
@@ -18,6 +19,7 @@ namespace ExodusVFX.Database
         public static Dictionary<string, MetroTextureHandle> textureHandles = new Dictionary<string, MetroTextureHandle>();
 
         public static Dictionary<string, MetroLevel> levels = new Dictionary<string, MetroLevel>();
+        public static Dictionary<string, MetroModel> models = new Dictionary<string, MetroModel>();
 
         public static void loadFromFile(string filePath)
         {
@@ -25,18 +27,18 @@ namespace ExodusVFX.Database
             MetroDatabase.textureHandles.Clear();
 
             MetroDatabase.vfx = MetroVFX.Read(filePath);
-            LoadScripts();
-            LoadTexture();
+            //LoadScripts();
+            //LoadTexture();
         }
 
         private static void LoadScripts()
         {
             MetroDatabase.configBinCache = MetroDatabase.vfx.GetFileContent("content/config.bin");
-            var reader = new BinaryReader(new MemoryStream(MetroDatabase.configBinCache));
+            BinaryReader reader = new BinaryReader(new MemoryStream(MetroDatabase.configBinCache));
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                var crc32 = reader.ReadUInt32();
-                var size = reader.ReadUInt32();
+                uint crc32 = reader.ReadUInt32();
+                uint size = reader.ReadUInt32();
                 Log.Information($"Loading script_crc32_0x{crc32.ToString("X")}.bin, length: {size}, offset 0x{reader.BaseStream.Position.ToString("X")}");
                 MetroDatabase.luaScripts.Add(new MetroLuaScript(crc32, (int)size, (int)reader.BaseStream.Position));
                 reader.BaseStream.Position += size;
@@ -45,15 +47,14 @@ namespace ExodusVFX.Database
 
         private static void LoadTexture()
         {
-            var texturesHandleStorage = MetroDatabase.vfx.GetFileContent("content/textures_handles_storage.bin");
-            var reader = new BinaryReader(new MemoryStream(texturesHandleStorage));
+            BinaryReader reader = new BinaryReader(new MemoryStream(MetroDatabase.vfx.GetFileContent("content/textures_handles_storage.bin")));
             reader.BaseStream.Seek(6, SeekOrigin.Begin); //Skip the first 6 headers bytes, aka AVER..
-            var entriesCount = reader.ReadUInt32();
+            uint entriesCount = reader.ReadUInt32();
             for (int i = 0; i < entriesCount; i++)
             {
-                var idx = reader.ReadUInt32();
-                var size = reader.ReadUInt32();
-                var textureData = MetroReflectionReader.Read<MetroTextureHandle>(reader.ReadBytes((int)size));
+                uint idx = reader.ReadUInt32();
+                uint size = reader.ReadUInt32();
+                MetroTextureHandle textureData = MetroReflectionReader.Read<MetroTextureHandle>(reader.ReadBytes((int)size));
                 MetroDatabase.textureHandles.Add(textureData.name, textureData);
                 Log.Information($"Loading texture data for {textureData.name}");
             }

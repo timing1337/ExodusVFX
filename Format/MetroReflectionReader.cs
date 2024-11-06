@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Serilog;
 using System.Numerics;
+using System.Reflection;
 
 namespace ExodusVFX.Format
 {
@@ -9,19 +10,19 @@ namespace ExodusVFX.Format
     {
         public static T Read<T>(byte[] buffer) where T : MetroHandleClass, new()
         {
-            var reader = new BinaryReader(new MemoryStream(buffer));
+            BinaryReader reader = new BinaryReader(new MemoryStream(buffer));
 
-            var handleObject = new T();
+            T handleObject = new T();
 
             handleObject.name = reader.ReadStringZ();
             handleObject.flags = reader.ReadByte();
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                var propertyName = reader.ReadStringZ();
-                var propertyType = reader.ReadStringZ();
+                string propertyName = reader.ReadStringZ();
+                string propertyType = reader.ReadStringZ();
                 var value = MetroReflectionReader.ReadPropertyValue(reader, propertyType);
-                var field = typeof(T).GetField(propertyName);
+                FieldInfo field = typeof(T).GetField(propertyName);
                 if(field == null)
                 {
                     Log.Warning($"Can't find property {propertyName} in class {typeof(T).Name}");
@@ -34,7 +35,7 @@ namespace ExodusVFX.Format
 
         private static object ReadPropertyValue(BinaryReader reader, string propertyType)
         {
-            var genericTypes = propertyType.Split(", ");
+            string[] genericTypes = propertyType.Split(", ");
             object value = null;
             switch (genericTypes[0])
             {
@@ -70,8 +71,8 @@ namespace ExodusVFX.Format
                     break;
                 case "choose": //unknown...?
                 case "choose_array": //weird lol
-                    var chooseName = reader.ReadStringZ();
-                    var chooseType = reader.ReadStringZ();
+                    string chooseName = reader.ReadStringZ();
+                    string chooseType = reader.ReadStringZ();
                     value = MetroReflectionReader.ReadPropertyValue(reader, chooseType);
                     break;
                 default:
@@ -82,7 +83,7 @@ namespace ExodusVFX.Format
 
         private static float[] ReadFloatArrayPropertyValue(BinaryReader reader)
         {
-            var num = reader.ReadUInt32();
+            uint num = reader.ReadUInt32();
             var array = new float[num];
             for (int i = 0; i < num; i++) array[i] = reader.ReadSingle();
             return array;
@@ -90,8 +91,8 @@ namespace ExodusVFX.Format
 
         private static byte[] ReadU8ArrayPropertyValue(BinaryReader reader)
         {
-            var num = reader.ReadUInt32();
-            var array = new byte[num];
+            uint num = reader.ReadUInt32();
+            byte[] array = new byte[num];
             for (int i = 0; i < num; i++) array[i] = reader.ReadByte();
             return array;
         }
